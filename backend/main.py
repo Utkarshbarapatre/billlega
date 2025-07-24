@@ -143,7 +143,8 @@ async def health_check():
         "status": "healthy",
         "service": "Legal Billing Email Summarizer",
         "version": "1.0.0",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "port": settings.port
     }
 
 @app.get("/")
@@ -152,7 +153,9 @@ async def root():
     return {
         "message": "Legal Billing Email Summarizer API",
         "version": "1.0.0",
-        "docs": "/docs" if settings.debug else "Documentation disabled in production"
+        "docs": "/docs" if settings.debug else "Documentation disabled in production",
+        "health": "/health",
+        "status": "/api/status"
     }
 
 # Error handlers
@@ -165,12 +168,23 @@ async def internal_error_handler(request: Request, exc: Exception):
     logger.error(f"Internal server error: {exc}")
     return {"error": "Internal server error", "message": str(exc)}
 
-if __name__ == "__main__":
+def main():
+    """Main function to run the application"""
+    # Get port from environment variable, default to 8000
     port = int(os.environ.get("PORT", 8000))
+    host = "0.0.0.0"
+    
+    logger.info(f"Starting server on {host}:{port}")
+    logger.info(f"Debug mode: {settings.debug}")
+    logger.info(f"Environment: {os.getenv('RAILWAY_ENVIRONMENT', 'development')}")
+    
     uvicorn.run(
         "backend.main:app",
-        host="0.0.0.0",
+        host=host,
         port=port,
         reload=settings.debug,
         log_level="info"
     )
+
+if __name__ == "__main__":
+    main()
