@@ -21,7 +21,7 @@ class Settings:
     clio_base_url: str = os.getenv("CLIO_BASE_URL", "https://app.clio.com")
     
     # Application Configuration
-    secret_key: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+    secret_key: str = os.getenv("SECRET_KEY", "-oU9X3RQYFs2xx68UDTnAmcxqE-ZhJOBetRYumTol8Q")
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"
     port: int = int(os.getenv("PORT", 8000))
     
