@@ -17,7 +17,7 @@ class Settings:
     # Clio Configuration
     clio_client_id: str = os.getenv("CLIO_CLIENT_ID", "")
     clio_client_secret: str = os.getenv("CLIO_CLIENT_SECRET", "")
-    clio_redirect_uri: str = os.getenv("CLIO_REDIRECT_URI", "https://gracious-celebration.railway.internal/callback")
+    clio_redirect_uri: str = os.getenv("CLIO_REDIRECT_URI", "https://gracious-celebration-production.up.railway.app/callback")
     clio_base_url: str = os.getenv("CLIO_BASE_URL", "https://app.clio.com")
     
     # Application Configuration
@@ -31,9 +31,17 @@ class Settings:
     # Railway Configuration
     railway_environment: str = os.getenv("RAILWAY_ENVIRONMENT", "development")
     railway_service_name: str = os.getenv("RAILWAY_SERVICE_NAME", "legal-billing-summarizer")
+    railway_domain: str = os.getenv("RAILWAY_DOMAIN", "gracious-celebration-production.up.railway.app")
     
     @property
     def is_production(self) -> bool:
         return self.railway_environment == "production" or not self.debug
+    
+    @property
+    def base_url(self) -> str:
+        """Get the base URL for the application"""
+        if self.is_production:
+            return f"https://{self.railway_domain}"
+        return f"http://localhost:{self.port}"
 
 settings = Settings()
