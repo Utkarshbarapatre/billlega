@@ -29,6 +29,7 @@ async def lifespan(app: FastAPI):
     logger.info("Starting up Legal Billing Email Summarizer")
     logger.info(f"Environment: {'Production' if not settings.debug else 'Development'}")
     logger.info(f"Port: {settings.port}")
+    logger.info(f"Base URL: {settings.base_url}")
     
     try:
         await init_db()
@@ -51,11 +52,12 @@ app = FastAPI(
     redoc_url="/redoc" if settings.debug else None
 )
 
-# CORS middleware
+# CORS middleware - Updated for new Railway domain
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if settings.debug else [
-        "https://gracious-celebration.railway.internal",
+        "https://gracious-celebration-production.up.railway.app",
+        "https://*.up.railway.app",
         "https://*.railway.app"
     ],
     allow_credentials=True,
@@ -125,7 +127,9 @@ async def get_status(db: Session = Depends(get_db)):
             "gmail_connected": gmail_connected,
             "clio_connected": clio_connected,
             "status": "healthy",
-            "environment": "production" if not settings.debug else "development"
+            "environment": "production" if not settings.debug else "development",
+            "base_url": settings.base_url,
+            "railway_domain": settings.railway_domain
         }
     except Exception as e:
         logger.error(f"Status check error: {e}")
@@ -144,7 +148,9 @@ async def health_check():
         "service": "Legal Billing Email Summarizer",
         "version": "1.0.0",
         "timestamp": datetime.now().isoformat(),
-        "port": settings.port
+        "port": settings.port,
+        "base_url": settings.base_url,
+        "railway_domain": settings.railway_domain
     }
 
 @app.get("/")
@@ -155,7 +161,16 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs" if settings.debug else "Documentation disabled in production",
         "health": "/health",
-        "status": "/api/status"
+        "status": "/api/status",
+        "base_url": settings.base_url,
+        "endpoints": {
+            "health": "/health",
+            "status": "/api/status",
+            "gmail": "/api/gmail/*",
+            "clio": "/api/clio/*",
+            "summarizer": "/api/summarizer/*",
+            "extension": "/api/extension/*"
+        }
     }
 
 # Error handlers
@@ -177,6 +192,7 @@ def main():
     logger.info(f"Starting server on {host}:{port}")
     logger.info(f"Debug mode: {settings.debug}")
     logger.info(f"Environment: {os.getenv('RAILWAY_ENVIRONMENT', 'development')}")
+    logger.info(f"Base URL: {settings.base_url}")
     
     uvicorn.run(
         "backend.main:app",
