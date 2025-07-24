@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Legal Billing Email Summarizer",
+  "version": "1.0.0",
+  "description": "Capture Gmail emails for legal billing and AI summarization",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions": ["https://mail.google.com/*", "http://localhost:8000/*", "https://*.up.railway.app/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Legal Billing Summarizer"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
