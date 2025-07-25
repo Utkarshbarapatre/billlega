@@ -27,9 +27,11 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting up Legal Billing Email Summarizer")
-    logger.info(f"Environment: {'Production' if not settings.debug else 'Development'}")
+    logger.info(f"Environment: {'Production' if settings.is_production else 'Development'}")
     logger.info(f"Port: {settings.port}")
     logger.info(f"Base URL: {settings.base_url}")
+    logger.info(f"Railway Domain: {settings.railway_domain}")
+    logger.info(f"Clio Redirect URI: {settings.clio_redirect_uri}")
     
     try:
         await init_db()
@@ -52,14 +54,17 @@ app = FastAPI(
     redoc_url="/redoc" if settings.debug else None
 )
 
-# CORS middleware - Updated for new Railway domain
+# CORS middleware - Dynamic origins based on actual domain
+allowed_origins = ["*"] if settings.debug else [
+    settings.base_url,
+    f"https://{settings.railway_domain}",
+    "https://*.up.railway.app",
+    "https://*.railway.app"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if settings.debug else [
-        "https://gracious-celebration-production.up.railway.app",
-        "https://*.up.railway.app",
-        "https://*.railway.app"
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -127,9 +132,10 @@ async def get_status(db: Session = Depends(get_db)):
             "gmail_connected": gmail_connected,
             "clio_connected": clio_connected,
             "status": "healthy",
-            "environment": "production" if not settings.debug else "development",
+            "environment": "production" if settings.is_production else "development",
             "base_url": settings.base_url,
-            "railway_domain": settings.railway_domain
+            "railway_domain": settings.railway_domain,
+            "clio_redirect_uri": settings.clio_redirect_uri
         }
     except Exception as e:
         logger.error(f"Status check error: {e}")
@@ -150,7 +156,8 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "port": settings.port,
         "base_url": settings.base_url,
-        "railway_domain": settings.railway_domain
+        "railway_domain": settings.railway_domain,
+        "clio_redirect_uri": settings.clio_redirect_uri
     }
 
 @app.get("/")
@@ -163,6 +170,7 @@ async def root():
         "health": "/health",
         "status": "/api/status",
         "base_url": settings.base_url,
+        "railway_domain": settings.railway_domain,
         "endpoints": {
             "health": "/health",
             "status": "/api/status",
@@ -185,13 +193,13 @@ async def internal_error_handler(request: Request, exc: Exception):
 
 def main():
     """Main function to run the application"""
-    # Get port from environment variable, default to 8000
-    port = int(os.environ.get("PORT", 8000))
+    # Get port from environment variable, default to 8080
+    port = settings.port
     host = "0.0.0.0"
     
     logger.info(f"Starting server on {host}:{port}")
     logger.info(f"Debug mode: {settings.debug}")
-    logger.info(f"Environment: {os.getenv('RAILWAY_ENVIRONMENT', 'development')}")
+    logger.info(f"Environment: {settings.railway_environment}")
     logger.info(f"Base URL: {settings.base_url}")
     
     uvicorn.run(
