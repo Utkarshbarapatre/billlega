@@ -6,15 +6,16 @@ import logging
 
 from ..core.database import ClioToken
 from ..models.email import Email
+from ..core.config import settings
 
 logger = logging.getLogger(__name__)
 
 class ClioService:
     def __init__(self):
-        self.client_id = os.getenv("CLIO_CLIENT_ID")
-        self.client_secret = os.getenv("CLIO_CLIENT_SECRET")
-        self.redirect_uri = os.getenv("CLIO_REDIRECT_URI", "http://127.0.0.1:8000/callback")
-        self.base_url = os.getenv("CLIO_BASE_URL", "https://app.clio.com")
+        self.client_id = settings.clio_client_id
+        self.client_secret = settings.clio_client_secret
+        self.redirect_uri = settings.clio_redirect_uri  # Now uses dynamic domain
+        self.base_url = settings.clio_base_url
     
     def get_auth_url(self) -> str:
         """Get Clio OAuth authorization URL"""
@@ -123,8 +124,6 @@ class ClioService:
                             email.pushed_to_clio = True
                             pushed_count += 1
                         else:
-                            errors.append(f"Email {email.id}: {response.text}")
-                 
                             errors.append(f"Email {email.id}: {response.text}")
                     
                     except Exception as e:
